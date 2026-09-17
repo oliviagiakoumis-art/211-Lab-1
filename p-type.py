@@ -2,9 +2,10 @@
 '''
 go into terminal:
 
+"cd C:\Users\ogana\Downloads\211\lab 1
 git init
 
-git add file1.py
+git add .py
 
 git add file2.py
 git commit -m "Initial commit"
