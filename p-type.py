@@ -25,47 +25,42 @@ git push -u origin main --> for the first time only,,after that : git push
 
 from utils.brick import reset_brick, wait_ready_sensors, Motor, time, EV3ultrasonicsensor
 
-# Initialize sensors and motors (Update ports 'A' and 'D' to match your build)
+# Initialize sensors and motors
 us_sensor = EV3ultrasonicsensor()
 left_motor = Motor("A")
 right_motor = Motor("D")
 
 # Lab 1 P-Type Parameters
-BAND_CENTER = 20  # Target distance in cm[cite: 1]
-BASE_SPEED = 200  # Nominal driving speed
-KP = 6.0          # Proportional gain constant (tune this value in lab)
+BAND_CENTER = 20    # Target distance in cm
+BASE_SPEED = 200    # Nominal driving speed (DPS)
+KP = 4.0            # Proportional gain constant (tune in lab)--> Kp too high-->tuirns too fast
+MAX_CORRECTION = 150 # Saturation cap to prevent motor strain
 
 if __name__ == "__main__":
     wait_ready_sensors()
     
     try:
-        print("Running P-Type Controller...")
+        print("Running P-Type Controller (Wall on Left)...")
         while True:
             distance = us_sensor.get_cm()
             
             if distance is not None:
-                # Calculate error
-                error = distance - BAND_CENTER
+                print(f"Distance: {distance} cm")
                 
-                # Proportional correction magnitude
+                error = distance - BAND_CENTER
                 correction = int(KP * abs(error))
                 
-                # Cap the maximum correction to prevent motor saturation
-                if correction > 150:
-                    correction = 150
-                
-                if error < 0:
-                    # Too close: scale wheel speeds to steer away smoothly
+                if correction > MAX_CORRECTION:
+                    correction = MAX_CORRECTION
+
+                if error > 0:
+                    # Too far from left wall: steer left smoothly towards wall
                     left_motor.set_dps(max(50, BASE_SPEED - correction))
                     right_motor.set_dps(BASE_SPEED + correction)
-                elif error > 0:
-                    # Too far: scale wheel speeds to steer towards smoothly
+                else:
+                    # Too close to left wall: steer right smoothly away from wall
                     left_motor.set_dps(BASE_SPEED + correction)
                     right_motor.set_dps(max(50, BASE_SPEED - correction))
-                else:
-                    # Exactly at band center
-                    left_motor.set_dps(BASE_SPEED)
-                    right_motor.set_dps(BASE_SPEED)
                 
                 left_motor.start()
                 right_motor.start()
